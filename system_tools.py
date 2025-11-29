@@ -91,7 +91,7 @@ if __name__ == '__main__':
     
     print("\n--- Running Slack Context Test ---")
     
-    TEST_CHANNEL_ID = "C09U8ART7QT" 
+    TEST_CHANNEL_ID = "CHANNEL_ID" 
     
     if TEST_CHANNEL_ID == "C06R7M4XXXX":
         print("Test skipped.")
@@ -100,4 +100,5 @@ if __name__ == '__main__':
         print(f"Captured {len(slack_msgs)} recent Slack message(s) from channel {TEST_CHANNEL_ID}:")
         for msg in slack_msgs:
             print(f"- [User {msg.get('user_id', 'N/A')}] {msg.get('text', 'No text')[:50]}...")
+
         print("----------------------------------")
