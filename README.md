@@ -1,71 +1,100 @@
 
 
-# 📄 Contextual Recall Concierge Agent
+
+# 🧠 Contextual Recall Concierge (Local Edition)
 
 ## 🚀 Project Summary
 
-The **Contextual Recall Concierge Agent** is an AI-powered solution designed to eliminate the cognitive load of **context switching** for knowledge workers. By automating the capture and synthesis of a user's complete work state upon a "pause" command, the agent creates a **Long Term Memory snapshot** that allows for instant task resumption, saving significant time and improving focus.
+The **Contextual Recall Concierge Agent** is a local-first AI solution designed to eliminate the cognitive load of **context switching** for knowledge workers. By automating the capture and synthesis of a user's complete work state (Active Windows + Slack history) upon a "pause" command, the agent creates a **Long-Term Memory snapshot**. This allows for instant task resumption, saving time and maintaining focus.
 
-## 🏗️ Final Architecture: The Four-Agent Pipeline
+Originally cloud-dependent, this version has been optimized for **local CPU execution** using Ollama, ensuring 100% data privacy and zero API costs.
 
-The core of the system is a **Sequential Agents** workflow, executing a strict four-step pipeline to transform raw activity data into a persistent, actionable summary.
+## 🏗️ Final Architecture: The Sequential Agent Pipeline
 
-| \# | Agent Name | Role & Core Action | Output/Function |
-| :---: | :--- | :--- | :--- |
-| **1** | **Activity\_Tracker** | Capture the complete work state (**Custom Tools**) and perform **Context Engineering** (filtering noise like system windows). | Provides clean raw context (files + filtered Slack history) to the LLM agents. |
-| **2** | **Suggestor Agent** | Analyzes the raw context using an **LLM** (**Gemini 2.5 Flash**) to predict the most likely next step when the user is unsure. | LLM Prediction of the next step. |
-| **3** | **Context\_Compactor** | Uses the user's chosen "Absolute Next Step" and the raw context to generate the final, structured Markdown summary (**Agent powered by an LLM**). | The final, structured Markdown summary (The Snapshot). |
-| **4** | **Memory\_Storer** | Acts as the system's **Long Term Memory** by persisting the final summary to disk (**FileSessionService**). | Saves the final summary to disk in the `/sessions` directory. |
+The system utilizes a **Sequential Agents** workflow, executing a strict four-step pipeline to transform raw activity data into a persistent, actionable summary.
 
-## 🛠️ Core AI/Agent Concepts Implemented
+| # | Agent Name | Role & Core Action | Output/Function |
+| --- | --- | --- | --- |
+| **1** | **Activity_Tracker** | Captures OS window titles and Slack history. Performs **Security Scrubbing** to remove sensitive tokens. | Provides clean raw context (files + filtered Slack history) to the LLM. |
+| **2** | **Suggestor Agent** | Analyzes the raw context using **Ollama (Gemma 3)** to predict the most likely next step. | AI-generated prediction of the next step. |
+| **3** | **Context_Compactor** | Synthesizes the chosen "Absolute Next Step" and raw data into a structured Markdown summary with emojis. | The final, structured **Recall Snapshot**. |
+| **4** | **Memory_Storer** | Acts as the system's **Long Term Memory** by persisting the summary to disk as a versioned JSON file. | Saves data to the `/sessions` directory. |
 
-| Concept | Implementation in the Concierge Agent |
-| :--- | :--- |
-| **Sequential Agents** | The entire workflow is a strict pipeline: Activity\_Tracker $\rightarrow$ Suggestor Agent $\rightarrow$ Context\_Compactor $\rightarrow$ Memory\_Storer. |
-| **Agent powered by an LLM** | Both the **Suggestor Agent** (Prediction) and **Context Compactor** (Synthesis) are dedicated agents powered by **Gemini 2.5 Flash**. |
-| **Custom Tools** | Implemented within the Activity\_Tracker: `get_active_windows()` (OS interaction) and `fetch_recent_slack_msgs()` (communication API). |
-| **Context Engineering** | Input filtering within the **Activity\_Tracker** removes low-value noise (e.g., Slack "user joined" messages) before LLM summarization. |
-| **Long Term Memory** | Upgraded to the **FileSessionService**, which saves the compacted context as a JSON file, ensuring task state persistence. |
-| **Observability** | Structured logging (Python's logging module) records every agent step with a timestamp and status, creating an audit trace in `concierge_agent_trace.log`. |
+## 🛠️ Local CPU Optimization & Security
+
+| Concept | Implementation in the Concierge Agent | Benefit |
+| --- | --- | --- |
+| **Local LLM** | Powered by **Ollama (Gemma 3:1b/2b)**. | 100% private; runs entirely on local hardware. |
+| **Resource Control** | Configured with `num_thread: 4`. | Prevents system freezing/overheating on laptops. |
+| **Data Pruning** | Captures Top 5 Windows + 5 Slack Messages. | Reduces "Token Load" for faster inference on CPUs. |
+| **Security Scrub** | Sensitive Keyword Filtering (Tokens/Secrets). | Automatically hides sensitive strings from the snapshot. |
+| **Observability** | Structured logging in `concierge_agent_trace.log`. | Records every agent step for audit and debugging. |
 
 ## ⚙️ Setup and Installation Instructions
 
 ### Prerequisites
 
-  * **Python 3.10+**
-  * **Slack App** (Bot Token and Channel ID)
-  * **Gemini API Key**
+* **Python 3.10+**
+* **Ollama Desktop** (Download from [ollama.com](https://ollama.com))
+* **Slack App** (Bot Token and Channel ID)
 
 ### Installation Steps
 
-1.  **Clone the Repository (or setup files).**
-2.  **Create and Activate Virtual Environment:**
-    ```bash
-    python -m venv venv
-    .\venv\Scripts\activate   # Windows PowerShell
-    ```
-3.  **Install Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Configure Environment Variables:** Create a file named `.env` in the project root:
-    ```bash
-    # .env
-    GEMINI_API_KEY="AIzaSy...YOUR_GEMINI_KEY"
-    SLACK_BOT_TOKEN="xoxb-YOUR-SLACK-BOT-TOKEN-HERE"
-    ```
+1. **Model Setup:**
+```bash
+ollama pull gemma3:1b
 
-### ▶️ How to Run and Test (Streamlit Deployment)
+```
 
-1.  **Start the Streamlit Application:**
-    ```bash
-    streamlit run streamlit_app.py
-    ```
-2.  **Test the PAUSE Command:**
-      * In the browser UI, click **"💡 Suggest Next Step (Analyze Context)"**.
-      * Enter a **Project Name**.
-      * Click **"Capture & Pause Task"**. (Observe the terminal print the sequential logs for the 4-step pipeline.)
-3.  **Test the RESUME Command:**
-      * Select the newly created **session ID** in the dropdown menu.
-      * The complete **Contextual Recall Snapshot** (Immediate Next Step, LLM Compaction Summary, and Workspace Environment) will be displayed immediately.
+
+2. **Virtual Environment:**
+```bash
+python -m venv venv
+.\venv\Scripts\activate   # Windows PowerShell
+
+```
+
+
+3. **Install Dependencies:**
+```bash
+pip install ollama streamlit python-dotenv PyGetWindow slack_sdk
+
+```
+
+
+4. **Configure Environment:** Create a `.env` file in the project root:
+```bash
+# .env
+SLACK_BOT_TOKEN="xoxb-YOUR-SLACK-BOT-TOKEN-HERE"
+
+```
+
+
+
+## ▶️ How to Run and Test
+
+### 1. Set CPU Guardrails
+
+To ensure stability on a standard laptop, set these environment variables in your terminal:
+
+```powershell
+$env:OLLAMA_NUM_PARALLEL=1
+$env:OLLAMA_MAX_LOADED_MODELS=1
+$env:OMP_NUM_THREADS=4
+
+```
+
+### 2. Launch the Application
+
+```bash
+streamlit run streamlit_app.py
+
+```
+
+### 3. Usage Workflow
+
+* **PAUSE:** Click **"💡 Suggest Next Step"** to let the agent analyze your context. Enter a Project Name and click **"Capture & Pause Task"**.
+* **RESUME:** Select your **session ID** from the dropdown. The UI will display your **Contextual Recall Snapshot** (Immediate Next Step, Categorized Slack Messages, and Workspace Environment) with full emoji formatting.
+
+
 
